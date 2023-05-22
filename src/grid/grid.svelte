@@ -46,8 +46,8 @@
 <div class="container">
   {#if focusedChannel!==""}
     <div id="focusedChannel" class="card focused" >
-      <div on:click="{focusMe(focusedChannel)}">x</div>
       <Twitch showChat="true" channelName={focusedChannel}></Twitch>
+      <div class="delete" on:click="{focusMe(focusedChannel)}">x</div>
     </div>
   {/if}
   <!-- <div id="onlinechannels" display="flex"> -->
@@ -55,17 +55,15 @@
       <div
         animate:flip={{ duration: dragDuration }}
         class="card"
-        style="display: {focusedChannel===channel?"none":""}"
-        class:focused={focusedChannel==channel}
         draggable="true"
         on:dragstart={() => draggingCard = channel}
         on:dragend={() => draggingCard = undefined}
         on:dragenter={() => swapWith(channel)}
         on:dragover|preventDefault
       >
-        <div on:click="{deleteMe(channel)}">x</div>
-        <div on:click="{focusMe(channel)}">f</div>
-        <Twitch offlineHandler={()=>setOffline(channel)} channelName={channel}></Twitch>
+      <div class="focus" on:click="{focusMe(channel)}">f</div>
+      <Twitch offlineHandler={()=>setOffline(channel)} channelName={channel}></Twitch>
+      <div class="delete" on:click="{deleteMe(channel)}">x</div>
       </div>
     {/each}
   <!-- </div> -->
@@ -75,7 +73,6 @@
       <div
         animate:flip={{ duration: dragDuration }}
         class="card"
-        style="display: {focusedChannel===channel?"none":""}"
         class:focused={focusedChannel==channel}
         draggable="true"
         on:dragstart={() => draggingCard = channel}
@@ -83,9 +80,8 @@
         on:dragenter={() => swapWith(channel)}
         on:dragover|preventDefault
       >
-        <div on:click="{deleteMe(channel)}">x</div>
-        <div on:click="{focusMe(channel)}">f</div>
-        <Twitch channelName={channel}></Twitch>
+      <Twitch channelName={channel}></Twitch>
+      <div class="delete" on:click="{deleteMe(channel)}">x</div>
       </div>
     {/each}
   <!-- </div> -->
@@ -93,7 +89,13 @@
 </div>
 
 <style>
-	.container {
+  .focus{
+    background-color:navy
+  }
+  .delete{
+    background-color:red
+  }
+.container {
 		display: flex;
     flex-wrap: wrap;
 		/* grid-template-rows: repeat(4, 1fr); */
@@ -108,7 +110,7 @@
 		/* justify-content: center; */
 		align-items: left;
     color: darkblue;
-		background-color: lightblue;
+		background-color: #787878;
 		/* width: 100%; */
 		height: 340px;
 		font-size: 1.5rem;
@@ -117,7 +119,7 @@
 	}
   
   .focused {
-    height: 950px;
+    height: 1000px;
     /* width: 100%; */
   }
 </style>

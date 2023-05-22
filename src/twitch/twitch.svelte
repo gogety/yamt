@@ -18,6 +18,7 @@
     player.addEventListener(Twitch.Embed.READY,function(){
       if (showChat){
         player.setQuality(player.getQuality()[1])
+        document.documentElement.requestFullscreen();
       }
       else{
         // lazy, for now statically get the second highest 
