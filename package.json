@@ -14,6 +14,7 @@
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^2.0.0",
 		"@sveltejs/kit": "^1.5.0",
+		"@types/gridstack": "^0.5.2",
 		"@typescript-eslint/eslint-plugin": "^5.45.0",
 		"@typescript-eslint/parser": "^5.45.0",
 		"eslint": "^8.28.0",
@@ -31,6 +32,7 @@
 	"dependencies": {
 		"@vitejs/plugin-basic-ssl": "^1.0.1",
 		"fs": "^0.0.1-security",
-		"gridstack": "^8.1.1"
+		"gridstack": "^8.1.1",
+		"svelte-grid": "^5.1.1"
 	}
 }
