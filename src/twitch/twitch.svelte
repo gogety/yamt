@@ -1,8 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { createEventDispatcher } from 'svelte';
+  const dispatch = createEventDispatcher();
   let player:Twitch.Player;
   export let channelName:string= "monstercat"
   export let showChat:boolean = false
+  export let onlineHandler = ()=>{};
   export let offlineHandler = ()=>{};
 
   onMount(async () => {
@@ -24,6 +27,8 @@
         // lazy, for now statically get the second highest 
         player.setQuality('480p');
       }
+      // alert (`sending ${channelName}`)
+      dispatch('twitchready', {data: channelName});
     })
     player.addEventListener(Twitch.Embed.VIDEO_READY, function(){
       window.player=player;
@@ -31,6 +36,9 @@
     player.addEventListener(Twitch.Player.OFFLINE, function(){
       // alert("channel is offline !");
       offlineHandler();
+    })
+    player.addEventListener(Twitch.Player.ONLINE, function(){
+      onlineHandler();
     })
   })
   $: {

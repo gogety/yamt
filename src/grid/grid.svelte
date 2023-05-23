@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { flip } from 'svelte/animate'
 	import Twitch from '../twitch/twitch.svelte';
+  import { createEventDispatcher } from 'svelte';
+  
+  const dispatch = createEventDispatcher();
 
 	const dragDuration = 300
   export let channels:string[];
@@ -25,13 +28,31 @@
   }
 
   function deleteMe(channel){
-    const removed = channels.splice(channels.indexOf(channel),1);
-    channels=channels
+    // const removed = channels.splice(channels.indexOf(channel),1);
+    // channels=channels
+
+    let removed;
+    if (channels.includes(channel)){
+      channels = channels.filter(e=>e!=channel);
+      removed = channel
+    }
     if (focusedChannel === channel){
       // remove if it was also focused 
       focusedChannel = "";
     }
     return removed
+  }
+
+  function setOnline(channel){
+    // Only do something if the channel is not already online
+    if (channels.includes(channel))
+      return
+    
+    if (offlineChannel && !offlineChannels.includes(offlineChannel)){
+      const onlineChannel = offlineChannels.splice(offlineChannels.indexOf(offlineChannel),1);
+      offlineChannels=offlineChannels;
+      channels.push(onlineChannel);
+    }
   }
 
   function setOffline(channel){
@@ -41,13 +62,14 @@
       offlineChannels=offlineChannels;
     }
   }
-</script>
 
+</script>
+<label style="color: white;"> {channels.length} online, {offlineChannels.length} offline</label>
 <div class="container">
   {#if focusedChannel!==""}
     <div id="focusedChannel" class="card focused" >
-      <Twitch showChat="true" channelName={focusedChannel}></Twitch>
-      <div class="delete" on:click="{focusMe(focusedChannel)}">x</div>
+        <Twitch showChat="true" channelName={focusedChannel}></Twitch>
+        <div class="delete" on:click="{focusMe(focusedChannel)}">x</div>
     </div>
   {/if}
   <!-- <div id="onlinechannels" display="flex"> -->
@@ -61,9 +83,11 @@
         on:dragenter={() => swapWith(channel)}
         on:dragover|preventDefault
       >
-      <div class="focus" on:click="{focusMe(channel)}">f</div>
-      <Twitch offlineHandler={()=>setOffline(channel)} channelName={channel}></Twitch>
-      <div class="delete" on:click="{deleteMe(channel)}">x</div>
+        <div class="focus" on:click="{focusMe(channel)}">f</div>
+        <Twitch offlineHandler={()=>setOffline(channel)} 
+          channelName={channel}
+          on:twitchready ></Twitch>
+        <div class="delete" on:click="{deleteMe(channel)}">x</div>
       </div>
     {/each}
   <!-- </div> -->
@@ -73,15 +97,14 @@
       <div
         animate:flip={{ duration: dragDuration }}
         class="card"
-        class:focused={focusedChannel==channel}
         draggable="true"
         on:dragstart={() => draggingCard = channel}
         on:dragend={() => draggingCard = undefined}
         on:dragenter={() => swapWith(channel)}
         on:dragover|preventDefault
       >
-      <Twitch channelName={channel}></Twitch>
-      <div class="delete" on:click="{deleteMe(channel)}">x</div>
+        <Twitch onlineHandler={()=>setOnline(channel)} channelName={channel}></Twitch>
+        <div class="delete" on:click="{deleteMe(channel)}">x</div>
       </div>
     {/each}
   <!-- </div> -->
