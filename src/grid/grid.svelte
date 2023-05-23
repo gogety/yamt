@@ -83,11 +83,14 @@
         on:dragenter={() => swapWith(channel)}
         on:dragover|preventDefault
       >
-        <div class="focus" on:click="{focusMe(channel)}">f</div>
-        <Twitch offlineHandler={()=>setOffline(channel)} 
-          channelName={channel}
-          on:twitchready ></Twitch>
-        <div class="delete" on:click="{deleteMe(channel)}">x</div>
+      <div class="focus" on:click="{focusMe(channel)}">f</div>
+      {#if channel != focusedChannel}
+          <Twitch offlineHandler={()=>setOffline(channel)} 
+            channelName={channel}
+            on:twitchready ></Twitch>
+      {:else} <div>IN FOCUS</div>
+      {/if}
+      <div class="delete" on:click="{deleteMe(channel)}">x</div>
       </div>
     {/each}
   <!-- </div> -->
