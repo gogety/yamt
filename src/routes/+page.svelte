@@ -23,20 +23,6 @@
 	let draggingCard: Channel|undefined;
 	let swappingWithCard: Channel|undefined;
 	let animatingCards = new Set();
-
-	function swapWithOG(channel: Channel) {
-		// nice animation but forces the channels in between to reload as well
-		if (draggingCard === channel || animatingCards.has(channel)) return;
-		animatingCards.add(channel);
-		setTimeout(() => animatingCards.delete(channel), dragDuration);
-		if (draggingCard){
-			const cardAIndex = channels.indexOf(draggingCard);
-			const cardBIndex = channels.indexOf(channel);
-			channels[cardAIndex] = channel;
-			channels[cardBIndex] = draggingCard;
-		}
-		return true
-	}
 	
 	function swapWith(channel: Channel|undefined) {
 		// sacrifice animation to not have to reload all channels in the path of the two swapped
@@ -61,6 +47,7 @@
 
 	function deleteMe(channel: Channel) {
 		channels = channels.filter((e) => e != channel);
+		(focusedChannel === channel) && (focusedChannel = undefined)
 	}
 
 	function setStatus(channel: Channel, status: channelStatus){
