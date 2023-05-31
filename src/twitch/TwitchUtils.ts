@@ -14,3 +14,19 @@ export async function isChannelLive(channel: string): Promise<boolean> {
 		return false; // Error occurred, assume channel is offline
 	}
 }
+
+export async function getChannelStatus(channel: string): Promise<channelStatus>{
+	return await isChannelLive(channel) ? channelStatus.online : channelStatus.offline;
+}
+
+export enum channelStatus{
+	offline,
+	online,
+	hidden,
+	unknown
+}
+
+export interface Channel {
+	name: string;
+	status: channelStatus;
+}

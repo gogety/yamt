@@ -1,86 +1,94 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import Grid from '../grid/grid.svelte';
 	import { myChannels } from './myChannels';
-	let channelsToAdd: string[] = [];
-	export let channels: Array<string> = [];
+	import { flip } from 'svelte/animate';
+	import Twitch from '../twitch/twitch.svelte';
+	import { isChannelLive, channelStatus, getChannelStatus, type Channel } from '../twitch/TwitchUtils';
+
+
+
+	let channels: Channel[] = [];
+	$: offlineChannels = () => channels.filter(channel => channel.status == channelStatus.offline)
+	$: onlineChannels = () => channels.filter(channel => channel.status == channelStatus.online)
+	$: hiddenChannels = () => channels.filter(channel => channel.status == channelStatus.hidden)
+	let focusedChannel:Channel|undefined;
 	let displayOfflineChannels = false;
 	let input: string;
 
-	onMount(async () => {});
-
-	import { flip } from 'svelte/animate';
-	import Twitch from '../twitch/twitch.svelte';
+	onMount(async () => {
+		setInterval(scanOffline,60000);
+	});
 
 	const dragDuration = 300;
-	let draggingCard;
+	let draggingCard: Channel|undefined;
+	let swappingWithCard: Channel|undefined;
 	let animatingCards = new Set();
-	export let offlineChannels: string[] = [];
-	let focusedChannel = '';
 
-	function swapWith(channel) {
+	function swapWithOG(channel: Channel) {
+		// nice animation but forces the channels in between to reload as well
 		if (draggingCard === channel || animatingCards.has(channel)) return;
 		animatingCards.add(channel);
 		setTimeout(() => animatingCards.delete(channel), dragDuration);
-		const cardAIndex = channels.indexOf(draggingCard);
-		const cardBIndex = channels.indexOf(channel);
-		channels[cardAIndex] = channel;
-		channels[cardBIndex] = draggingCard;
+		if (draggingCard){
+			const cardAIndex = channels.indexOf(draggingCard);
+			const cardBIndex = channels.indexOf(channel);
+			channels[cardAIndex] = channel;
+			channels[cardBIndex] = draggingCard;
+		}
+		return true
+	}
+	
+	function swapWith(channel: Channel|undefined) {
+		// sacrifice animation to not have to reload all channels in the path of the two swapped
+		// have to be precise when moving
+		if (draggingCard === channel ) return;
+		if (draggingCard){
+			const cardAIndex = channels.indexOf(draggingCard);
+			const cardBIndex = channels.indexOf(channel);
+			const cardAName = channels[cardAIndex].name;
+			const cardBName = channels[cardBIndex].name ;
+			channels[cardAIndex].name = cardBName;
+			channels[cardBIndex].name = cardAName;
+			channels = channels;
+		}
+		return true
 	}
 
-	function focusMe(channel) {
-		focusedChannel = focusedChannel == channel ? '' : channel;
+	function focusMe(channel: Channel|undefined) {
+		channel && (focusedChannel = focusedChannel == channel ? undefined : channel)
+		return null
 	}
 
-	function deleteMe(channel) {
-		if (channels.includes(channel)) {
-			channels = channels.filter((e) => e != channel);
-		}
-		if (offlineChannels.includes(channel)) {
-			offlineChannels = offlineChannels.filter((e) => e != channel);
-		}
-		if (focusedChannel === channel) {
-			// remove if it was also focused
-			focusedChannel = '';
-		}
+	function deleteMe(channel: Channel) {
+		channels = channels.filter((e) => e != channel);
 	}
 
-	function setOnline(channel) {
-		let removed = false;
-		if (offlineChannels.includes(channel)) {
-			offlineChannels = offlineChannels.filter((e) => e != channel);
-			removed = !removed;
-		}
-		if (removed && !channels.includes(channel)) {
-			channels = [...channels, channel];
-		}
+	function setStatus(channel: Channel, status: channelStatus){
+		channel.status = status;
+		channels = channels;
 	}
 
-	function setOffline(channel) {
-		let removed = false;
-		if (channels.includes(channel)) {
-			channels = channels.filter((e) => e != channel);
-			removed = !removed;
-		}
-		if (removed && !offlineChannels.includes(channel)) {
-			offlineChannels = [...offlineChannels, channel];
-		}
-	}
-
-  let addChannels = () => {
-		// let currentValue: string = document.getElementById('channel_name').value;
+	let addChannels = async () => {
 		let currentValue = input;
-
-		try {
+		try{
 			currentValue = JSON.parse(currentValue);
-		} catch {}
-
-		channelsToAdd = Array.isArray(currentValue) ? [...currentValue] : [currentValue];
-
-		debugger;
+		}
+		catch{} // if it fails, consider it is not a json object and just one channel name
+		let channelsToAdd: Channel[] = Array.isArray(currentValue)
+			? await Promise.all(currentValue.map(
+					async (channelName) => ({ name: channelName, status: await getChannelStatus(channelName) } as Channel)
+			  ))
+			: [{ name: currentValue, status: await getChannelStatus(currentValue)} as Channel];
 
 		// easiest to push all channels but also can be too much in one shot. Comment if enabling reactive buffering below
-		channels = [...new Set([...channels, ...channelsToAdd])];
+		channels = [...channels, ...channelsToAdd.filter(channel => !channels.some(cha=>cha.name === channel.name))];
+	};
+
+	let scanOffline = () => {
+		channels.filter(channel => channel.status == channelStatus.offline).forEach(async (channel) => {
+			channel.status = await getChannelStatus(channel.name);
+		})
+		channels = channels;
 	};
 
 	// Reactive buffering, not needed when there are not that many online channels
@@ -121,33 +129,33 @@
 {/if} -->
 <input type="checkbox" bind:checked={displayOfflineChannels} />
 <label style="color: white;">Display offline channels</label>
-<label style="color: white;"> {channels.length} online, {offlineChannels.length} offline</label>
+<label style="color: white;"> {onlineChannels().length} online, {offlineChannels().length} offline</label>
 <div class="container">
-	{#if focusedChannel !== ''}
+	{#if focusedChannel}
 		<div id="focusedChannel" class="card focused">
 			<Twitch
 				showChat={true}
-				channelName={focusedChannel}
+				channel={focusedChannel}
 				deleteHandler={() => focusMe(focusedChannel)}
 			/>
 		</div>
 	{/if}
 	<!-- <div id="onlinechannels" display="flex"> -->
-	{#each channels as channel (channel)}
+	{#each onlineChannels() as channel (channel)}
 		<div
 			animate:flip={{ duration: dragDuration }}
 			class="card"
 			draggable="true"
 			on:dragstart={() => (draggingCard = channel)}
-			on:dragend={() => (draggingCard = undefined)}
-			on:dragenter={() => swapWith(channel)}
+			on:dragend={() => (swapWith(swappingWithCard)) && (draggingCard = undefined) && (swappingWithCard = undefined)}
+			on:dragenter={() => (swappingWithCard = channel)}
 			on:dragover|preventDefault
 		>
 			<div class="focus" on:click={focusMe(channel)}>f</div>
 			{#if channel != focusedChannel}
 				<Twitch
-					offlineHandler={() => setOffline(channel)}
-					channelName={channel}
+					offlineHandler={() => setStatus(channel, channelStatus.offline)}
+					channel={channel}
 					deleteHandler={() => deleteMe(channel)}
 				/>
 			{:else}
@@ -158,7 +166,7 @@
 	<!-- </div> -->
 	{#if displayOfflineChannels}
 		<!-- <div id="offlineChannels" display="flex"> -->
-		{#each offlineChannels as channel (channel)}
+		{#each offlineChannels() as channel (channel)}
 			<div
 				animate:flip={{ duration: dragDuration }}
 				class="card"
@@ -169,8 +177,8 @@
 				on:dragover|preventDefault
 			>
 				<Twitch
-					onlineHandler={() => setOnline(channel)}
-					channelName={channel}
+					onlineHandler={() => setStatus(channel,channelStatus.online)}
+					channel={channel}
 					deleteHandler={() => deleteMe(channel)}
 				/>
 			</div>
