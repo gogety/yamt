@@ -1,10 +1,7 @@
-<script lang="ts">
+<!-- <script lang="ts">
 	import { flip } from 'svelte/animate'
 	import Twitch from '../twitch/twitch.svelte';
-  import { createEventDispatcher } from 'svelte';
   
-  const dispatch = createEventDispatcher();
-
 	const dragDuration = 300
   export let channels:string[];
   export let displayOfflineChannels:boolean=false;
@@ -28,38 +25,37 @@
   }
 
   function deleteMe(channel){
-    // const removed = channels.splice(channels.indexOf(channel),1);
-    // channels=channels
-
-    let removed;
     if (channels.includes(channel)){
       channels = channels.filter(e=>e!=channel);
-      removed = channel
+    }
+    if (offlineChannels.includes(channel)){
+      offlineChannels = offlineChannels.filter(e=>e!=channel);
     }
     if (focusedChannel === channel){
       // remove if it was also focused 
       focusedChannel = "";
     }
-    return removed
   }
 
-  function setOnline(channel){
-    // Only do something if the channel is not already online
-    if (channels.includes(channel))
-      return
-    
-    if (offlineChannel && !offlineChannels.includes(offlineChannel)){
-      const onlineChannel = offlineChannels.splice(offlineChannels.indexOf(offlineChannel),1);
-      offlineChannels=offlineChannels;
-      channels.push(onlineChannel);
+  function setOnline(channel){   
+    let removed=false;
+    if (offlineChannels.includes(channel)){
+      offlineChannels = offlineChannels.filter(e=>e!=channel);
+      removed = !removed;
+    }
+    if (removed && !channels.includes(channel)){
+      channels = [...channels,channel];
     }
   }
 
   function setOffline(channel){
-    const offlineChannel = deleteMe(channel);
-    if (offlineChannel && !offlineChannels.includes(offlineChannel)){
-      offlineChannels.push(offlineChannel);
-      offlineChannels=offlineChannels;
+    let removed=false;
+    if (channels.includes(channel)){
+      channels = channels.filter(e=>e!=channel);
+      removed = !removed;
+    }
+    if (removed && !offlineChannels.includes(channel)){
+      offlineChannels = [...offlineChannels,channel];
     }
   }
 
@@ -68,11 +64,11 @@
 <div class="container">
   {#if focusedChannel!==""}
     <div id="focusedChannel" class="card focused" >
-        <Twitch showChat="true" channelName={focusedChannel}></Twitch>
-        <div class="delete" on:click="{focusMe(focusedChannel)}">x</div>
+        <Twitch showChat={true} channelName={focusedChannel}
+        deleteHandler={()=>deleteMe(focusedChannel)}
+        ></Twitch>
     </div>
   {/if}
-  <!-- <div id="onlinechannels" display="flex"> -->
     {#each channels as channel (channel)}
       <div
         animate:flip={{ duration: dragDuration }}
@@ -87,15 +83,13 @@
       {#if channel != focusedChannel}
           <Twitch offlineHandler={()=>setOffline(channel)} 
             channelName={channel}
+            deleteHandler={()=>deleteMe(channel)}
             on:twitchready ></Twitch>
       {:else} <div>IN FOCUS</div>
       {/if}
-      <div class="delete" on:click="{deleteMe(channel)}">x</div>
       </div>
     {/each}
-  <!-- </div> -->
   {#if displayOfflineChannels}
-  <!-- <div id="offlineChannels" display="flex"> -->
     {#each offlineChannels as channel (channel)}
       <div
         animate:flip={{ duration: dragDuration }}
@@ -106,11 +100,12 @@
         on:dragenter={() => swapWith(channel)}
         on:dragover|preventDefault
       >
-        <Twitch onlineHandler={()=>setOnline(channel)} channelName={channel}></Twitch>
-        <div class="delete" on:click="{deleteMe(channel)}">x</div>
+        <Twitch onlineHandler={()=>setOnline(channel)} 
+          channelName={channel}
+          deleteHandler={()=>deleteMe(channel)}
+          ></Twitch>
       </div>
     {/each}
-  <!-- </div> -->
   {/if}
 </div>
 
@@ -118,9 +113,7 @@
   .focus{
     background-color:navy
   }
-  .delete{
-    background-color:red
-  }
+ 
 .container {
 		display: flex;
     flex-wrap: wrap;
@@ -148,4 +141,4 @@
     height: 1000px;
     /* width: 100%; */
   }
-</style>
+</style> -->
