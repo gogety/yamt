@@ -4,6 +4,7 @@
 	import { flip } from 'svelte/animate';
 	import Twitch from '../twitch/twitch.svelte';
 	import { isChannelLive, channelStatus, getChannelStatus, type Channel } from '../twitch/TwitchUtils';
+	import Sidebar from '../sidebar.svelte';
 
 
 
@@ -12,7 +13,7 @@
 	$: onlineChannels = () => channels.filter(channel => channel.status == channelStatus.online)
 	$: hiddenChannels = () => channels.filter(channel => channel.status == channelStatus.hidden)
 	let focusedChannel:Channel|undefined;
-	let displayOfflineChannels = false;
+	let displayHiddenChannels = false;
 	let input: string;
 
 	onMount(async () => {
@@ -50,9 +51,16 @@
 		(focusedChannel === channel) && (focusedChannel = undefined)
 	}
 
-	function setStatus(channel: Channel, status: channelStatus){
-		channel.status = status;
-		channels = channels;
+	function setStatus(channel: Channel, status: channelStatus | undefined = undefined){
+		if (status){
+			channel.status = status;
+			channels = channels;
+		}
+		else{
+			getChannelStatus(channel.name).then(status=>{
+				setStatus(channel, status)
+			});
+		}
 	}
 
 	let addChannels = async () => {
@@ -70,6 +78,12 @@
 		// easiest to push all channels but also can be too much in one shot. Comment if enabling reactive buffering below
 		channels = [...channels, ...channelsToAdd.filter(channel => !channels.some(cha=>cha.name === channel.name))];
 	};
+	
+	let hideUnhideChannel = (channel:	Channel) => {
+		if (channel.status == channelStatus.hidden){
+			getChannelStatus(channel.name).then(status => {channel.status = status; channels = channels});
+		}
+	}
 
 	let scanOffline = () => {
 		channels.filter(channel => channel.status == channelStatus.offline).forEach(async (channel) => {
@@ -102,6 +116,7 @@
 	input = myChannels;
 </script>
 
+<Sidebar channels={channels} unhideChannelHandler={hideUnhideChannel} ></Sidebar>
 <input
 	bind:value={input}
 	placeholder="Enter channel name or JSON array of channels"
@@ -114,8 +129,8 @@
 		>Loading {pool.length} [{pool.join(',')}], {channelsToAdd.length} channels to go</label
 	>
 {/if} -->
-<input type="checkbox" bind:checked={displayOfflineChannels} />
-<label style="color: white;">Display offline channels</label>
+<input type="checkbox" bind:checked={displayHiddenChannels} />
+<label style="color: white;">Display hidden channels</label>
 <label style="color: white;"> {onlineChannels().length} online, {offlineChannels().length} offline</label>
 <div class="container">
 	{#if focusedChannel}
@@ -144,34 +159,38 @@
 					offlineHandler={() => setStatus(channel, channelStatus.offline)}
 					channel={channel}
 					deleteHandler={() => deleteMe(channel)}
+					hideHandler={()=>setStatus(channel, channelStatus.hidden)}
 				/>
 			{:else}
 				<div>IN FOCUS</div>
 			{/if}
 		</div>
 	{/each}
-	<!-- </div> -->
-	{#if displayOfflineChannels}
-		<!-- <div id="offlineChannels" display="flex"> -->
-		{#each offlineChannels() as channel (channel)}
+	{#if displayHiddenChannels}
+		{#each hiddenChannels() as channel (channel)}
 			<div
 				animate:flip={{ duration: dragDuration }}
 				class="card"
 				draggable="true"
 				on:dragstart={() => (draggingCard = channel)}
-				on:dragend={() => (draggingCard = undefined)}
-				on:dragenter={() => swapWith(channel)}
+				on:dragend={() => (swapWith(swappingWithCard)) && (draggingCard = undefined) && (swappingWithCard = undefined)}
+				on:dragenter={() => (swappingWithCard = channel)}
 				on:dragover|preventDefault
 			>
-				<Twitch
-					onlineHandler={() => setStatus(channel,channelStatus.online)}
-					channel={channel}
-					deleteHandler={() => deleteMe(channel)}
-				/>
+				{#if channel != focusedChannel}
+					<Twitch
+						offlineHandler={() => setStatus(channel, channelStatus.offline)}
+						channel={channel}
+						deleteHandler={() => deleteMe(channel)}
+						hideHandler={() => setStatus(channel)}
+					/>
+				{:else}
+					<div>IN FOCUS</div>
+				{/if}
 			</div>
 		{/each}
-		<!-- </div> -->
 	{/if}
+	<!-- </div> -->
 </div>
 
 <style>

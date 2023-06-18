@@ -20,10 +20,9 @@ export async function getChannelStatus(channel: string): Promise<channelStatus>{
 }
 
 export enum channelStatus{
-	offline,
-	online,
-	hidden,
-	unknown
+	offline = "offline",
+	online = "online",
+	hidden = "hidden"
 }
 
 export interface Channel {

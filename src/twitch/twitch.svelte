@@ -8,6 +8,7 @@
 	export let onlineHandler = () => {};
 	export let offlineHandler = () => {};
 	export let deleteHandler = () => {};
+  export let hideHandler = () => {};
 
   onMount(async () =>{
     if (channel.status == channelStatus.online){
@@ -59,10 +60,11 @@
   {#if channel.status == channelStatus.offline}
     <div>Offline...</div>
 	{:else if !player}
-		<div>Loading...</div>
+		<div>Loading {channel.name} ...</div>
 	{/if}
 </div>
 <div class="delete" on:click={deleteHandler}>x</div>
+<div class="hide" on:click={hideHandler}>h</div>
 
 <!-- Add a placeholder for the Twitch embed -->
 <!-- <div class="twitch-embed" id="twitch-embed-{channelName}"></div> -->
@@ -78,5 +80,9 @@
 
 	.delete {
 		background-color: red;
+	}
+
+  .hide {
+		background-color: yellow;
 	}
 </style>
