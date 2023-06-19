@@ -6,9 +6,9 @@
 	import { isChannelLive, channelStatus, getChannelStatus, type Channel } from '../twitch/TwitchUtils';
 	import Sidebar from '../sidebar.svelte';
 	let channels: Channel[] = [];
-	$: offlineChannels = () => channels.filter(channel => channel.status == channelStatus.offline)
+	// $: offlineChannels = () => channels.filter(channel => channel.status == channelStatus.offline)
 	$: onlineChannels = () => channels.filter(channel => channel.status == channelStatus.online)
-	$: hiddenChannels = () =>channels.filter(channel => channel.isHidden)
+	// $: hiddenChannels = () =>channels.filter(channel => channel.isHidden)
 	let focusedChannel:Channel|undefined;
 	let displayHiddenChannels = false;
 	let input: string;
@@ -20,7 +20,6 @@
 	const dragDuration = 300;
 	let draggingCard: Channel|undefined;
 	let swappingWithCard: Channel|undefined;
-	let animatingCards = new Set();
 	
 	function swapWith(channel: Channel|undefined) {
 		// sacrifice animation to not have to reload all channels in the path of the two swapped
@@ -78,6 +77,7 @@
 	
 	let hideUnhideChannel = (channel:	Channel) => {
 		channel.isHidden = !channel.isHidden;
+		channel = channel;
 		getChannelStatus(channel.name).then(status => {channel.status = status; channels = channels});
 	}
 
@@ -134,7 +134,7 @@
 			<Twitch
 				showChat={true}
 				channel={focusedChannel}
-				deleteHandler={() => focusMe(focusedChannel)}
+				focusHandler={() => focusMe(focusedChannel)}
 			/>
 		</div>
 	{/if}
@@ -150,18 +150,14 @@
 				on:dragenter={() => (swappingWithCard = channel)}
 				on:dragover|preventDefault
 			>
-				<div class="focus" on:click={focusMe(channel)}>f</div>
-				{#if channel != focusedChannel}
-					<Twitch
-						offlineHandler={() => setStatus(channel, channelStatus.offline)}
-						channel={channel}
-						deleteHandler={() => deleteMe(channel)}
-						hideHandler={()=>hideUnhideChannel(channel)}
-						focusHandler={()=>focusMe(channel)}
-					/>
-				{:else}
-					<div>IN FOCUS</div>
-				{/if}
+				<Twitch
+					offlineHandler={() => setStatus(channel, channelStatus.offline)}
+					channel={channel}
+					deleteHandler={() => deleteMe(channel)}
+					hideHandler={()=>hideUnhideChannel(channel)}
+					focusHandler={()=>focusMe(channel)}
+					focusedChannel = {focusedChannel}
+				/>
 			</div>
 	{/each}
 </div>
@@ -174,24 +170,28 @@
 	.container {
 		display: flex;
 		flex-wrap: wrap;
+		justify-content: middle;
 		/* grid-template-rows: repeat(4, 1fr); */
 		/* grid-template-columns: repeat(5, 1fr);  */
 		/* grid-template-columns: repeat(auto-fill); */
 		/* grid-template-rows: repeat(auto-fill, minmax(200px,1fr)); */
-		gap: 24px;
+		/* gap: 24px; */
 	}
 
 	.card {
-		display: flex;
+		/* display: flex; */
 		/* justify-content: center; */
-		align-items: left;
-		color: darkblue;
-		background-color: #787878;
+		/* align-items: left; */
+		/* color: darkblue; */
+		background-color: rgb(45, 45, 45);
 		/* width: 100%; */
 		height: 340px;
-		font-size: 1.5rem;
+		/* font-size: 1.5rem; */
 		aspect-ratio: 16/9;
-		flex-basis: 0;
+		/* flex-basis: 0; */
+		margin-bottom: 30px;
+		margin-left: 20px;
+		border-radius: 5px;
 	}
 
 	.focused {

@@ -50,7 +50,7 @@
     left: 0;
     background-color: #111;
     overflow-x: hidden;
-    transition: 0.5s;
+    /* transition: 0.5s; */
     padding-top: 15px;
     padding-left: 10px;
     -ms-overflow-style: none;  /* IE and Edge */
@@ -68,7 +68,7 @@
     font-size: 25px;
     color: #818181;
     display: block;
-    transition: 0.3s;
+    /* transition: 0.3s; */
   }
 
   .sidebar span:hover {
@@ -97,7 +97,7 @@
   }
 
   #main {
-    transition: margin-left .5s;
+    /* transition: margin-left .5s; */
     padding: 16px;
   }
 
