@@ -8,7 +8,7 @@
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"sourceMap": true,
-		"strict": true,
+		"strict": false,
 		"typeRoots": ["./src/twitch/twitch.d.ts","./src/grid/gridstack.d.ts"]
 	}
 	// Path aliases are handled by https://kit.svelte.dev/docs/configuration#alias

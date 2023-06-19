@@ -21,11 +21,11 @@ export async function getChannelStatus(channel: string): Promise<channelStatus>{
 
 export enum channelStatus{
 	offline = "offline",
-	online = "online",
-	hidden = "hidden"
+	online = "online"
 }
 
 export interface Channel {
 	name: string;
 	status: channelStatus;
+	isHidden: boolean;
 }

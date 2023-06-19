@@ -5,13 +5,10 @@
 	import Twitch from '../twitch/twitch.svelte';
 	import { isChannelLive, channelStatus, getChannelStatus, type Channel } from '../twitch/TwitchUtils';
 	import Sidebar from '../sidebar.svelte';
-
-
-
 	let channels: Channel[] = [];
 	$: offlineChannels = () => channels.filter(channel => channel.status == channelStatus.offline)
 	$: onlineChannels = () => channels.filter(channel => channel.status == channelStatus.online)
-	$: hiddenChannels = () => channels.filter(channel => channel.status == channelStatus.hidden)
+	$: hiddenChannels = () =>channels.filter(channel => channel.isHidden)
 	let focusedChannel:Channel|undefined;
 	let displayHiddenChannels = false;
 	let input: string;
@@ -80,9 +77,8 @@
 	};
 	
 	let hideUnhideChannel = (channel:	Channel) => {
-		if (channel.status == channelStatus.hidden){
-			getChannelStatus(channel.name).then(status => {channel.status = status; channels = channels});
-		}
+		channel.isHidden = !channel.isHidden;
+		getChannelStatus(channel.name).then(status => {channel.status = status; channels = channels});
 	}
 
 	let scanOffline = () => {
@@ -143,32 +139,9 @@
 		</div>
 	{/if}
 	<!-- <div id="onlinechannels" display="flex"> -->
-	{#each onlineChannels() as channel (channel)}
-		<div
-			animate:flip={{ duration: dragDuration }}
-			class="card"
-			draggable="true"
-			on:dragstart={() => (draggingCard = channel)}
-			on:dragend={() => (swapWith(swappingWithCard)) && (draggingCard = undefined) && (swappingWithCard = undefined)}
-			on:dragenter={() => (swappingWithCard = channel)}
-			on:dragover|preventDefault
-		>
-			<div class="focus" on:click={focusMe(channel)}>f</div>
-			{#if channel != focusedChannel}
-				<Twitch
-					offlineHandler={() => setStatus(channel, channelStatus.offline)}
-					channel={channel}
-					deleteHandler={() => deleteMe(channel)}
-					hideHandler={()=>setStatus(channel, channelStatus.hidden)}
-				/>
-			{:else}
-				<div>IN FOCUS</div>
-			{/if}
-		</div>
-	{/each}
-	{#if displayHiddenChannels}
-		{#each hiddenChannels() as channel (channel)}
+	{#each onlineChannels().filter((channel) => displayHiddenChannels || !channel.isHidden) as channel, index(channel)}
 			<div
+				id={index.toString()}
 				animate:flip={{ duration: dragDuration }}
 				class="card"
 				draggable="true"
@@ -177,20 +150,19 @@
 				on:dragenter={() => (swappingWithCard = channel)}
 				on:dragover|preventDefault
 			>
+				<div class="focus" on:click={focusMe(channel)}>f</div>
 				{#if channel != focusedChannel}
 					<Twitch
 						offlineHandler={() => setStatus(channel, channelStatus.offline)}
 						channel={channel}
 						deleteHandler={() => deleteMe(channel)}
-						hideHandler={() => setStatus(channel)}
+						hideHandler={()=>hideUnhideChannel(channel)}
 					/>
 				{:else}
 					<div>IN FOCUS</div>
 				{/if}
 			</div>
-		{/each}
-	{/if}
-	<!-- </div> -->
+	{/each}
 </div>
 
 <style>

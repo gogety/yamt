@@ -1,17 +1,19 @@
 <script lang="ts">
 	import { channelStatus, type Channel } from "./twitch/TwitchUtils";
+  import '@fortawesome/fontawesome-free/js/all.js';
+  import '@fortawesome/fontawesome-free/css/all.css';
 
   let open:Boolean = false;
   export let channels:Array<Channel>=[];
   export let unhideChannelHandler = (channel:Channel) => {};
   $: offlineChannels = () => channels.filter(channel => channel.status == channelStatus.offline)
 	$: onlineChannels = () => channels.filter(channel => channel.status == channelStatus.online)
-	$: hiddenChannels = () => channels.filter(channel => channel.status == channelStatus.hidden)
+	$: hiddenChannels = () => channels.filter(channel => channel.isHidden)
 
-  let openClose = ()=>{
-    open ? closeNav() : openNav();
-    open = !open;
-  }
+  // let openClose = ()=>{
+  //   open ? closeNav() : openNav();
+  //   open = !open;
+  // }
 
   let openNav = () => {
     document.getElementById("mySidebar").style.width = "250px";
@@ -25,32 +27,24 @@
 </script>
 
 <div id="mySidebar" class="sidebar">
-  <div class="status">Hidden</div>
-  <li>
-    {#each hiddenChannels() as channel(channel) }
-      <ul class="item">{channel.name} <button class="item" on:click={() => unhideChannelHandler(channel)}>unhide</button></ul>
-    {/each}
-  </li>
-
   <a href="javascript:void(0)" class="closebtn" on:click="{closeNav}">×</a>
-  <div class="status">Online</div>
   <li>
-    {#each onlineChannels() as channel(channel) }
-      <ul class="item">{channel.name} </ul>
+    {#each hiddenChannels() as channel}
+      <ul class="item">
+        <i class = "fa-solid fa-circle" style="{channel.status == channelStatus.online ? 'color: green' : 'color:red'}"/>
+        {channel.name} <button on:click={() => unhideChannelHandler(channel)}>unhide</button>
+      </ul>
     {/each}
-  </li>
-
-  <div class="status">Offline</div>
-  <li>
-    {#each offlineChannels() as channel(channel) }
-      <ul class="item">{channel.name}</ul>
+    {#each onlineChannels().concat(...offlineChannels()).filter(channel => !channel.isHidden) as channel}
+      <ul class="item">
+        <i class = "fa-solid fa-circle" style="{channel.status == channelStatus.online ? 'color: green' : 'color:red'}"/>
+        {channel.name} 
+      </ul>
     {/each}
-  </li> 
-
-  
+  </li>  
 </div>
 
-  <button class="openbtn" on:click={openClose}>☰</button>  
+<button class="openbtn" on:click={openNav}>☰</button>  
 
 <style>
   .status{
