@@ -6,12 +6,12 @@
   export let channel: Channel;
 	export let focusedChannel: Channel;
   export let showChat: boolean = false;
-  export let onlineHandler = null;
-	export let offlineHandler = null;
+  export let onlineHandler = () => {};
+	export let offlineHandler = () => {};
 	export let deleteHandler = null;
   export let hideHandler = null;
   export let focusHandler = null;
-
+  let currentlyFocused:boolean;
 
   onMount(async () =>{
     if (channel.status == channelStatus.online){
@@ -20,7 +20,8 @@
   })
 
   let reload = () => {
-    player = null;
+    alert("reloading "+channel.name);
+    if (player) { player.destroy();}
     loadPlayer();
   }
 
@@ -62,33 +63,46 @@
       changeChannel();
 		}
 	}
+
+  $: {
+    if (focusedChannel==channel){
+      currentlyFocused = true;
+    }
+    else if (currentlyFocused){
+      currentlyFocused = false;
+      setTimeout(reload, 0); ;
+    }
+  }
 </script>
 
-<div class="controlbar">
-  <span class="clickable" on:click={reload}>
-    <i class="fa-solid fa-arrows-rotate "/>
-  </span>
-
-  {#if focusHandler != null}
-    <span class="clickable" on:click={focusHandler}>
-      <i class="fa-solid fa-expand "/>
+<div style="display: flex">
+  <label style="color:white; padding-left: 3px">{channel.name}</label>
+  <div class="controlbar">
+    <span class="clickable" on:click={reload}>
+      <i class="fa-solid fa-arrows-rotate "/>
     </span>
-  {/if}
 
-  {#if hideHandler != null}
-    <span class="clickable" on:click={hideHandler}>
-      <i class="fa-solid {channel.isHidden ? 'fa-eye' : 'fa-eye-slash'}"/>
-    </span>
-  {/if}
+    {#if focusHandler != null}
+      <span class="clickable" on:click={focusHandler}>
+        <i class="fa-solid fa-expand "/>
+      </span>
+    {/if}
 
-  {#if deleteHandler != null}
-    <span class="clickable" on:click={deleteHandler}>
-      <i class="fa-solid fa-trash "/>
-    </span>
-  {/if}
+    {#if hideHandler != null}
+      <span class="clickable" on:click={hideHandler}>
+        <i class="fa-solid {channel.isHidden ? 'fa-eye' : 'fa-eye-slash'}"/>
+      </span>
+    {/if}
+
+    {#if deleteHandler != null}
+      <span class="clickable" on:click={deleteHandler}>
+        <i class="fa-solid fa-trash "/>
+      </span>
+    {/if}
+  </div>
 </div>
 
-{#if channel != focusedChannel}
+{#if channel !== focusedChannel}
   <div class="twitch-embed" id="twitch-embed-{channel.name}">
     {#if channel.status == channelStatus.offline}
     <div>Offline...</div>
@@ -120,7 +134,6 @@
     border-top-right-radius: 5px;
     width: 100%;
     justify-content: right;
-    vertical-align: middle;
     display: flex;
   }
   .clickable{

@@ -39,6 +39,7 @@
 
 	function focusMe(channel: Channel|undefined) {
 		channel && (focusedChannel = focusedChannel == channel ? undefined : channel)
+		focusedChannel = focusedChannel;
 		return null
 	}
 
@@ -128,16 +129,16 @@
 <input type="checkbox" bind:checked={displayHiddenChannels} />
 <label style="color: white;">Display hidden channels</label>
 <!-- <label style="color: white;"> {onlineChannels().length} online, {offlineChannels().length} offline</label> -->
+{#if focusedChannel}
+	<div id="focusedChannel" class="focused">
+		<Twitch
+			showChat={true}
+			channel={focusedChannel}
+			focusHandler={() => focusMe(focusedChannel)}
+		/>
+	</div>
+{/if}
 <div class="container">
-	{#if focusedChannel}
-		<div id="focusedChannel" class="card focused">
-			<Twitch
-				showChat={true}
-				channel={focusedChannel}
-				focusHandler={() => focusMe(focusedChannel)}
-			/>
-		</div>
-	{/if}
 	<!-- <div id="onlinechannels" display="flex"> -->
 	{#each onlineChannels().filter((channel) => displayHiddenChannels || !channel.isHidden) as channel, index(channel)}
 			<div
@@ -195,7 +196,7 @@
 	}
 
 	.focused {
-		height: 1000px;
-		/* width: 100%; */
+		/* height: 1000px; */
+		width: 100%;
 	}
 </style>
