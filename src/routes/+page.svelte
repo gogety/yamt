@@ -82,7 +82,7 @@
 	}
 
 	let scanOffline = () => {
-		channels.filter(channel => channel.status == channelStatus.offline).forEach(async (channel) => {
+		channels.filter(channel => channel.status == channelStatus.offline || channel.isHidden).forEach(async (channel) => {
 			channel.status = await getChannelStatus(channel.name);
 		})
 		channels = channels;
@@ -127,7 +127,7 @@
 {/if} -->
 <input type="checkbox" bind:checked={displayHiddenChannels} />
 <label style="color: white;">Display hidden channels</label>
-<label style="color: white;"> {onlineChannels().length} online, {offlineChannels().length} offline</label>
+<!-- <label style="color: white;"> {onlineChannels().length} online, {offlineChannels().length} offline</label> -->
 <div class="container">
 	{#if focusedChannel}
 		<div id="focusedChannel" class="card focused">
@@ -157,6 +157,7 @@
 						channel={channel}
 						deleteHandler={() => deleteMe(channel)}
 						hideHandler={()=>hideUnhideChannel(channel)}
+						focusHandler={()=>focusMe(channel)}
 					/>
 				{:else}
 					<div>IN FOCUS</div>

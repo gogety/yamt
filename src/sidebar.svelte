@@ -2,48 +2,29 @@
 	import { channelStatus, type Channel } from "./twitch/TwitchUtils";
   import '@fortawesome/fontawesome-free/js/all.js';
   import '@fortawesome/fontawesome-free/css/all.css';
+	import Sidebaritem from "./sidebaritem.svelte";
 
-  let open:Boolean = false;
   export let channels:Array<Channel>=[];
   export let unhideChannelHandler = (channel:Channel) => {};
-  $: offlineChannels = () => channels.filter(channel => channel.status == channelStatus.offline)
-	$: onlineChannels = () => channels.filter(channel => channel.status == channelStatus.online)
+  $: offlineChannels = () => channels.filter(channel => channel.status == channelStatus.offline && !channel.isHidden)
+	$: onlineChannels = () => channels.filter(channel => channel.status == channelStatus.online && !channel.isHidden)
 	$: hiddenChannels = () => channels.filter(channel => channel.isHidden)
-
-  // let openClose = ()=>{
-  //   open ? closeNav() : openNav();
-  //   open = !open;
-  // }
-
+  
   let openNav = () => {
     document.getElementById("mySidebar").style.width = "250px";
-    // document.getElementById("main").style.marginLeft = "250px";
   }
 
   let closeNav = () => {
     document.getElementById("mySidebar").style.width = "0";
-    // document.getElementById("main").style.marginLeft= "0";
   }  
 </script>
 
 <div id="mySidebar" class="sidebar">
-  <a href="javascript:void(0)" class="closebtn" on:click="{closeNav}">×</a>
-  <li>
-    {#each hiddenChannels() as channel}
-      <ul class="item">
-        <i class = "fa-solid fa-circle" style="{channel.status == channelStatus.online ? 'color: green' : 'color:red'}"/>
-        {channel.name} <button on:click={() => unhideChannelHandler(channel)}>unhide</button>
-      </ul>
-    {/each}
-    {#each onlineChannels().concat(...offlineChannels()).filter(channel => !channel.isHidden) as channel}
-      <ul class="item">
-        <i class = "fa-solid fa-circle" style="{channel.status == channelStatus.online ? 'color: green' : 'color:red'}"/>
-        {channel.name} 
-      </ul>
-    {/each}
-  </li>  
+  <span class="closebtn" on:click="{closeNav}" style="color:white">x</span>
+  <Sidebaritem title="Muted" channels={hiddenChannels()} hideUnhideChannelHandler={unhideChannelHandler}/>
+  <Sidebaritem title="Online" channels={onlineChannels()} hideUnhideChannelHandler={unhideChannelHandler}/>
+  <Sidebaritem title="Offline" channels={offlineChannels()} hideUnhideChannelHandler={unhideChannelHandler}/>
 </div>
-
 <button class="openbtn" on:click={openNav}>☰</button>  
 
 <style>
@@ -54,6 +35,7 @@
 
   .item{
     color:  white;
+    height: 30px;
   }
   body {
     font-family: "Lato", sans-serif;
@@ -69,10 +51,18 @@
     background-color: #111;
     overflow-x: hidden;
     transition: 0.5s;
-    padding-top: 60px;
+    padding-top: 15px;
+    padding-left: 10px;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+    font-size: 17px;
   }
 
-  .sidebar a {
+  .sidebar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sidebar span {
     padding: 8px 8px 8px 32px;
     text-decoration: none;
     font-size: 25px;
@@ -81,7 +71,7 @@
     transition: 0.3s;
   }
 
-  .sidebar a:hover {
+  .sidebar span:hover {
     color: #f1f1f1;
   }
 
@@ -89,7 +79,7 @@
     position: absolute;
     top: 0;
     right: 25px;
-    font-size: 36px;
+    font-size: 30px;
     margin-left: 50px;
   }
 
@@ -114,6 +104,6 @@
   /* On smaller screens, where height is less than 450px, change the style of the sidenav (less padding and a smaller font size) */
   @media screen and (max-height: 450px) {
     .sidebar {padding-top: 15px;}
-    .sidebar a {font-size: 18px;}
+    .sidebar span {font-size: 18px;}
   }
 </style>

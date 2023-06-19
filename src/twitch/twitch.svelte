@@ -9,6 +9,7 @@
 	export let offlineHandler = () => {};
 	export let deleteHandler = () => {};
   export let hideHandler = () => {};
+  export let focusHandler = () => {};
 
   onMount(async () =>{
     if (channel.status == channelStatus.online){
