@@ -3,95 +3,157 @@
 	import { myChannels } from './myChannels';
 	import { flip } from 'svelte/animate';
 	import Twitch from '../twitch/twitch.svelte';
-	import { isChannelLive, channelStatus, getChannelStatus, type Channel, EmbedMode } from '../twitch/TwitchUtils';
+	import {
+		channelStatus,
+		getChannelStatus,
+		type Channel,
+		EmbedMode
+	} from '../twitch/TwitchUtils';
 	import Sidebar from '../sidebar.svelte';
 	let channels: Channel[] = [];
 	// $: offlineChannels = () => channels.filter(channel => channel.status == channelStatus.offline)
-	$: onlineChannels = () => channels.filter(channel => channel.status == channelStatus.online)
+	$: onlineChannels = () => channels.filter((channel) => channel.status == channelStatus.online);
 	// $: hiddenChannels = () =>channels.filter(channel => channel.isHidden)
-	let focusedChannel:Channel|undefined;
+	let focusedChannel: Channel | undefined;
 	let displayHiddenChannels = false;
 	let input: string;
+	let channelsFromLocalStorage: string;
 
 	onMount(async () => {
-		setInterval(scanOffline,60000);
+		channelsFromLocalStorage = localStorage.getItem("channels")
+		setInterval(scanOffline, 60000);
 	});
 
 	const dragDuration = 300;
-	let draggingCard: Channel|undefined;
-	let swappingWithCard: Channel|undefined;
-	
-	function swapWith(channel: Channel|undefined) {
+	let draggingCard: Channel | undefined;
+	let swappingWithCard: Channel | undefined;
+
+	function swapWith(channel: Channel | undefined) {
 		// sacrifice animation to not have to reload all channels in the path of the two swapped
 		// have to be precise when moving
-		if (draggingCard === channel ) return;
-		if (draggingCard){
+		if (draggingCard === channel) return;
+		if (draggingCard) {
 			const cardAIndex = channels.indexOf(draggingCard);
 			const cardBIndex = channels.indexOf(channel);
 			const cardAName = channels[cardAIndex].name;
-			const cardBName = channels[cardBIndex].name ;
+			const cardBName = channels[cardBIndex].name;
 			channels[cardAIndex].name = cardBName;
 			channels[cardBIndex].name = cardAName;
 			channels = channels;
 		}
-		return true
+		return true;
 	}
 
-	function focusMe(channel: Channel|undefined) {
-		channel && (focusedChannel = focusedChannel == channel ? undefined : channel)
+	let focusMe = (channel: Channel | undefined) => {
+		channel && (focusedChannel = focusedChannel == channel ? undefined : channel);
 		focusedChannel = focusedChannel;
-		return null
+		return null;
 	}
 
-	function deleteMe(channel: Channel) {
+	let deleteMe = (channel: Channel) => {
 		channels = channels.filter((e) => e != channel);
-		(focusedChannel === channel) && (focusedChannel = undefined)
+		focusedChannel === channel && (focusedChannel = undefined);
 	}
 
-	function setStatus(channel: Channel, status: channelStatus | undefined = undefined){
-		if (status){
+	let setStatus = async (channel: Channel, status: channelStatus | undefined = undefined) => {
+		if (status) {
 			channel.status = status;
-			if (channel.status == channelStatus.offline && channel.preview){
+			if (channel.status == channelStatus.offline && channel.preview) {
 				channel.preview = false;
 			}
 			channels = channels;
-		}
-		else{
-			getChannelStatus(channel.name).then(status=>{
-				setStatus(channel, status)
+		} else {
+			getChannelStatus(channel.name).then((status) => {
+				setStatus(channel, status);
 			});
 		}
 	}
 
 	let addChannels = async () => {
 		let currentValue = input;
-		try{
+		try {
 			currentValue = JSON.parse(currentValue);
-		}
-		catch{} // if it fails, consider it is not a json object and just one channel name
+		} catch {} // if it fails, consider it is not a json object and just one channel name
 		let channelsToAdd: Channel[] = Array.isArray(currentValue)
-			? await Promise.all(currentValue.map(
-					async (channelName) => ({ name: channelName, status: await getChannelStatus(channelName) } as Channel)
-			  ))
-			: [{ name: currentValue, status: await getChannelStatus(currentValue)} as Channel];
+			? currentValue.map(
+						(channelName) =>
+							({ name: channelName} as Channel)
+					)
+			: [{ name: currentValue} as Channel];
 
-		// easiest to push all channels but also can be too much in one shot. Comment if using reactive buffering instead
-		channels = [...channels, ...channelsToAdd.filter(channel => !channels.some(cha=>cha.name === channel.name))];
+		loadChannels(channelsToAdd)
 	};
-	
-	let hideUnhideChannel = (channel:	Channel) => {
+
+	let saveChannels = () => {
+		// we don't need to save all the properties, just map the ones we want to keep
+		channelsFromLocalStorage = JSON.stringify(channels.map((channel)=>{
+			return {
+				name: channel.name,
+				isHidden: channel.isHidden
+			} as Channel
+		}));
+		localStorage.setItem("channels",channelsFromLocalStorage)
+		alert("Saved successfully !");
+	};
+
+	let loadChannels = async (channelsToAdd:Channel[]=null) => {
+		// Get list from local storage
+		!channelsToAdd && (channelsToAdd = JSON.parse(channelsFromLocalStorage))
+
+		if(channelsToAdd){
+			// get status
+			await Promise.all(
+				channelsToAdd.map(channel => {setStatus(channel)})
+			)
+
+			channels = [
+			...channels,
+			...channelsToAdd.filter((channel) => !channels.some((cha) => cha.name === channel.name))
+			];
+		}
+		else{
+			alert("No channels to load, use the save feature")
+		}
+	};
+
+	let exportChannels = () => {
+		const channelsExport = JSON.stringify(channels.map((channel)=>{
+			return {
+				name: channel.name,
+				isHidden: channel.isHidden
+			} as Channel// may return an object later
+		}))
+		navigator.clipboard.writeText(channelsExport);
+
+		alert ("Copied to clipboard");
+	}
+
+	let importChannels = () =>{
+		let channelsToAdd;
+		try{
+			channelsToAdd = JSON.parse(input)
+			loadChannels(channelsToAdd);
+		}
+		catch{
+			alert("Unable to parse syntax. Only use the import feature along with the export feature output.")
+		}
+	}
+
+	let hideUnhideChannel = (channel: Channel) => {
 		channel.isHidden = !channel.isHidden;
-		if (!channel.isHidden && channel.preview){
-				channel.preview = false;
+		if (!channel.isHidden && channel.preview) {
+			channel.preview = false;
 		}
 		channels = channels;
 		setStatus(channel);
-	}
+	};
 
 	let scanOffline = () => {
-		channels.filter(channel => channel.status == channelStatus.offline || channel.isHidden).forEach(async (channel) => {
-			setStatus(channel);
-		})
+		channels
+			.filter((channel) => channel.status == channelStatus.offline || channel.isHidden)
+			.forEach(async (channel) => {
+				setStatus(channel);
+			});
 		channels = channels;
 	};
 
@@ -119,21 +181,33 @@
 	input = myChannels;
 </script>
 
-<Sidebar channels={channels} unhideChannelHandler={hideUnhideChannel} ></Sidebar>
+<Sidebar {channels} unhideChannelHandler={hideUnhideChannel} deleteChannelHandler={deleteMe} />
 <input
 	bind:value={input}
 	placeholder="Enter channel name or JSON array of channels"
 	type="text"
 	id="channel_name"
 />
-<button on:click={() => addChannels()}>Add</button>
+{#if !!input}
+	<button on:click={() => addChannels()}>Add</button>
+{/if}
+{#if !!channels.length}
+	<button on:click={() => saveChannels()}>Save</button>
+	<button on:click={() => exportChannels()}>Export</button>
+{/if}
+{#if !!input}
+	<button on:click={() => importChannels()}>Import</button>
+{/if}
+{#if channelsFromLocalStorage}
+	<button title="Load saved channels" on:click={() => loadChannels()}>Load</button>
+{/if}
 <!-- {#if pool.length > 0}
 	<label style="color: white;"
 		>Loading {pool.length} [{pool.join(',')}], {channelsToAdd.length} channels to go</label
 	>
 {/if} -->
 <input type="checkbox" bind:checked={displayHiddenChannels} />
-<label style="color: white;">Display hidden channels</label>
+<label style="color: white;">Display muted channels</label>
 <!-- <label style="color: white;"> {onlineChannels().length} online, {offlineChannels().length} offline</label> -->
 {#if focusedChannel}
 	<div id="focusedChannel" class="focused">
@@ -146,26 +220,27 @@
 {/if}
 <div class="container">
 	<!-- <div id="onlinechannels" display="flex"> -->
-	{#each onlineChannels().filter((channel) => displayHiddenChannels || !channel.isHidden) as channel, index(channel)}
-			<div
-				id={index.toString()}
-				animate:flip={{ duration: dragDuration }}
-				class="card"
-				draggable="true"
-				on:dragstart={() => (draggingCard = channel)}
-				on:dragend={() => (swapWith(swappingWithCard)) && (draggingCard = undefined) && (swappingWithCard = undefined)}
-				on:dragenter={() => (swappingWithCard = channel)}
-				on:dragover|preventDefault
-			>
-				<Twitch
-					offlineHandler={() => setStatus(channel, channelStatus.offline)}
-					channel={channel}
-					deleteHandler={() => deleteMe(channel)}
-					hideHandler={()=>hideUnhideChannel(channel)}
-					focusHandler={()=>focusMe(channel)}
-					focusedChannel = {focusedChannel}
-				/>
-			</div>
+	{#each onlineChannels().filter((channel) => displayHiddenChannels || !channel.isHidden) as channel, index (channel)}
+		<div
+			id={index.toString()}
+			animate:flip={{ duration: dragDuration }}
+			class="card"
+			draggable="true"
+			on:dragstart={() => (draggingCard = channel)}
+			on:dragend={() =>
+				swapWith(swappingWithCard) && (draggingCard = undefined) && (swappingWithCard = undefined)}
+			on:dragenter={() => (swappingWithCard = channel)}
+			on:dragover|preventDefault
+		>
+			<Twitch
+				offlineHandler={() => setStatus(channel, channelStatus.offline)}
+				{channel}
+				deleteHandler={() => deleteMe(channel)}
+				hideHandler={() => hideUnhideChannel(channel)}
+				focusHandler={() => focusMe(channel)}
+				{focusedChannel}
+			/>
+		</div>
 	{/each}
 </div>
 

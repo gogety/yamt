@@ -5,7 +5,6 @@
 	let player: Twitch.Player;
   export let channel: Channel;
 	export let focusedChannel: Channel = null;
-  export let showChat: boolean = false;
   export let mode:EmbedMode = EmbedMode.tile;
   export let onlineHandler = () => {};
 	export let offlineHandler = () => {};
@@ -33,12 +32,10 @@
       muted: true,
       // Only needed if this page is going to be embedded on other websites
       parent: ['localhost'],
-      layout: showChat ? 'video-with-chat' : 'video'
+      layout: mode==EmbedMode.focus ? 'video-with-chat' : 'video'
     });
     player.addEventListener(Twitch.Embed.READY, function () {
       // alert("ready");
-      if (mode == EmbedMode.focus) {
-      }
       switch (mode){
         case EmbedMode.focus:
           document.documentElement.requestFullscreen();
@@ -88,24 +85,24 @@
   <div style="display: flex">
     <label style="color:white; padding-left: 3px">{channel.name}</label>
     <div class="controlbar">
-      <span class="clickable" on:click={reload}>
+      <span title="reload" class="clickable" on:click={reload}>
         <i class="fa-solid fa-arrows-rotate "/>
       </span>
 
       {#if focusHandler != null}
-        <span class="clickable" on:click={focusHandler}>
+        <span title="focus/unfocus" class="clickable" on:click={focusHandler}>
           <i class="fa-solid fa-expand "/>
         </span>
       {/if}
 
       {#if hideHandler != null}
-        <span class="clickable" on:click={hideHandler}>
+        <span title="mute/unmute" class="clickable" on:click={hideHandler}>
           <i class="fa-solid {channel.isHidden ? 'fa-eye' : 'fa-eye-slash'}"/>
         </span>
       {/if}
 
       {#if deleteHandler != null}
-        <span class="clickable" on:click={deleteHandler}>
+        <span title="remove" class="clickable" on:click={deleteHandler}>
           <i class="fa-solid fa-trash "/>
         </span>
       {/if}
