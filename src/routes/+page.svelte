@@ -3,7 +3,7 @@
 	import { myChannels } from './myChannels';
 	import { flip } from 'svelte/animate';
 	import Twitch from '../twitch/twitch.svelte';
-	import { isChannelLive, channelStatus, getChannelStatus, type Channel } from '../twitch/TwitchUtils';
+	import { isChannelLive, channelStatus, getChannelStatus, type Channel, EmbedMode } from '../twitch/TwitchUtils';
 	import Sidebar from '../sidebar.svelte';
 	let channels: Channel[] = [];
 	// $: offlineChannels = () => channels.filter(channel => channel.status == channelStatus.offline)
@@ -51,6 +51,9 @@
 	function setStatus(channel: Channel, status: channelStatus | undefined = undefined){
 		if (status){
 			channel.status = status;
+			if (channel.status == channelStatus.offline && channel.preview){
+				channel.preview = false;
+			}
 			channels = channels;
 		}
 		else{
@@ -72,19 +75,22 @@
 			  ))
 			: [{ name: currentValue, status: await getChannelStatus(currentValue)} as Channel];
 
-		// easiest to push all channels but also can be too much in one shot. Comment if enabling reactive buffering below
+		// easiest to push all channels but also can be too much in one shot. Comment if using reactive buffering instead
 		channels = [...channels, ...channelsToAdd.filter(channel => !channels.some(cha=>cha.name === channel.name))];
 	};
 	
 	let hideUnhideChannel = (channel:	Channel) => {
 		channel.isHidden = !channel.isHidden;
-		channel = channel;
-		getChannelStatus(channel.name).then(status => {channel.status = status; channels = channels});
+		if (!channel.isHidden && channel.preview){
+				channel.preview = false;
+		}
+		channels = channels;
+		setStatus(channel);
 	}
 
 	let scanOffline = () => {
 		channels.filter(channel => channel.status == channelStatus.offline || channel.isHidden).forEach(async (channel) => {
-			channel.status = await getChannelStatus(channel.name);
+			setStatus(channel);
 		})
 		channels = channels;
 	};
@@ -132,7 +138,7 @@
 {#if focusedChannel}
 	<div id="focusedChannel" class="focused">
 		<Twitch
-			showChat={true}
+			mode={EmbedMode.focus}
 			channel={focusedChannel}
 			focusHandler={() => focusMe(focusedChannel)}
 		/>

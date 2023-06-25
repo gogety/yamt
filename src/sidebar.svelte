@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { channelStatus, type Channel } from "./twitch/TwitchUtils";
-  import '@fortawesome/fontawesome-free/js/all.js';
-  import '@fortawesome/fontawesome-free/css/all.css';
 	import Sidebaritem from "./sidebaritem.svelte";
 
   export let channels:Array<Channel>=[];
   export let unhideChannelHandler = (channel:Channel) => {};
+  export let deleteChannelHandler = (channel:Channel) => {};
   $: offlineChannels = () => channels.filter(channel => channel.status == channelStatus.offline && !channel.isHidden)
 	$: onlineChannels = () => channels.filter(channel => channel.status == channelStatus.online && !channel.isHidden)
 	$: hiddenChannels = () => channels.filter(channel => channel.isHidden)
@@ -21,9 +20,9 @@
 
 <div id="mySidebar" class="sidebar">
   <span class="closebtn" on:click="{closeNav}" style="color:white">x</span>
-  <Sidebaritem title="Muted" channels={hiddenChannels()} hideUnhideChannelHandler={unhideChannelHandler}/>
-  <Sidebaritem title="Online" channels={onlineChannels()} hideUnhideChannelHandler={unhideChannelHandler}/>
-  <Sidebaritem title="Offline" channels={offlineChannels()} hideUnhideChannelHandler={unhideChannelHandler}/>
+  <Sidebaritem title="Muted" channels={hiddenChannels()} hideUnhideChannelHandler={unhideChannelHandler} deleteChannelHandler={deleteChannelHandler}/>
+  <Sidebaritem title="Online" channels={onlineChannels()} hideUnhideChannelHandler={unhideChannelHandler} deleteChannelHandler={deleteChannelHandler}/>
+  <Sidebaritem title="Offline" channels={offlineChannels()} hideUnhideChannelHandler={unhideChannelHandler} deleteChannelHandler={deleteChannelHandler}/>
 </div>
 <button class="openbtn" on:click={openNav}>☰</button>  
 

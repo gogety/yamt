@@ -24,8 +24,15 @@ export enum channelStatus{
 	online = "online"
 }
 
+export enum EmbedMode{
+	preview = "preview",
+	focus = "focus",
+	tile = "tile"
+}
+
 export interface Channel {
 	name: string;
 	status: channelStatus;
 	isHidden: boolean;
+	preview?: boolean;
 }

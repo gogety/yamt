@@ -9,8 +9,4 @@ declare global {
 	}
 }
 
-declare module '@fortawesome/pro-solid-svg-icons/index.en' {
-  export * from '@fortawesome/pro-solid-svg-icons';
-}
-
 export {};
