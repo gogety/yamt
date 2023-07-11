@@ -18,9 +18,16 @@
 	let displayHiddenChannels = false;
 	let input: string;
 	let channelsFromLocalStorage: string;
+	let cardStyle = {
+		'height': 340,
+		'margin-bottom': 30,
+		'margin-left': 20,
+		'border-radius': 5
+	};
 
 	onMount(async () => {
 		channelsFromLocalStorage = localStorage.getItem("channels")
+		JSON.parse(localStorage.getItem("cardStyle")) && (cardStyle = JSON.parse(localStorage.getItem("cardStyle")));
 		setInterval(scanOffline, 60000);
 	});
 
@@ -93,6 +100,7 @@
 			} as Channel
 		}));
 		localStorage.setItem("channels",channelsFromLocalStorage)
+		localStorage.setItem("cardStyle",JSON.stringify(cardStyle))
 		alert("Saved successfully !");
 	};
 
@@ -157,6 +165,26 @@
 		channels = channels;
 	};
 
+	let cssVariables = (node, variables)=>{
+		setCssVariables(node, variables);
+
+		return {
+			update(variables){
+				setCssVariables(node, variables);
+			}
+		}
+	}
+
+	let setCssVariables = (node, variables)=>{
+		for (const name in variables) {
+			node.style.setProperty(`--${name}`, variables[name]);
+		}
+	}
+
+	// $: {
+	// 	localStorage && cardStyle && (localStorage.setItem("cardStyle",JSON.stringify(cardStyle)))
+	// }
+
 	// Reactive buffering, not needed when there are not that many online channels
 	// Sort of recursion with tick. Updating channelsToAdd and/or pool triggers the function again
 	// $: tick().then(()=>{
@@ -199,15 +227,18 @@
 	<button on:click={() => importChannels()}>Import</button>
 {/if}
 {#if channelsFromLocalStorage}
-	<button title="Load saved channels" on:click={() => loadChannels()}>Load</button>
+<button title="Load saved channels" on:click={() => loadChannels()}>Load</button>
 {/if}
 <!-- {#if pool.length > 0}
 	<label style="color: white;"
-		>Loading {pool.length} [{pool.join(',')}], {channelsToAdd.length} channels to go</label
+	>Loading {pool.length} [{pool.join(',')}], {channelsToAdd.length} channels to go</label
 	>
-{/if} -->
-<input type="checkbox" bind:checked={displayHiddenChannels} />
-<label style="color: white;">Display muted channels</label>
+	{/if} -->
+	<input type="checkbox" bind:checked={displayHiddenChannels} />
+	<label style="color: white;">Display muted channels</label>
+	<input bind:value={cardStyle.height} type="number" style="width: 50px;"/>
+	<input bind:value={cardStyle.height} type="range" min="0" max="1440"/>
+	<label style="color: white;">Card size</label>
 <!-- <label style="color: white;"> {onlineChannels().length} online, {offlineChannels().length} offline</label> -->
 {#if focusedChannel}
 	<div id="focusedChannel" class="focused">
@@ -225,6 +256,7 @@
 			id={index.toString()}
 			animate:flip={{ duration: dragDuration }}
 			class="card"
+			use:cssVariables={{ height: cardStyle.height }}
 			draggable="true"
 			on:dragstart={() => (draggingCard = channel)}
 			on:dragend={() =>
@@ -267,7 +299,8 @@
 		/* color: darkblue; */
 		background-color: rgb(45, 45, 45);
 		/* width: 100%; */
-		height: 340px;
+		/* height: 340px; */
+		height: calc(var(--height) * 1px);
 		/* font-size: 1.5rem; */
 		aspect-ratio: 16/9;
 		/* flex-basis: 0; */

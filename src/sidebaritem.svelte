@@ -8,7 +8,6 @@
   export let title: string;
   export let hideUnhideChannelHandler = (channel:Channel) => {};
   export let deleteChannelHandler = (channel:Channel) => {}
-  // let selectedChannel:Channel;
   let previewChannel = (channel:Channel)=>{
     if (channel.preview){
       channel.preview = !channel.preview;
@@ -17,12 +16,6 @@
       channel.preview = true;
     }
     channels = channels;
-    // if (selectedChannel===channel){
-    //   selectedChannel=null
-    // }
-    // else{
-    //   selectedChannel=channel
-    // }
   }
 </script>
 
@@ -31,19 +24,27 @@
     <div style="color:white; font-size:20px; margin-bottom:10px; margin-top:5px">{title} ({channels.length})</div>
     {#each channels as channel, index(channel)}
       <div class="item">
-        {#if channel.status == channelStatus.online && channel.isHidden}
-          <span title="preview" class="clickable" on:click={() => previewChannel(channel)}>
-            <i class="fa-solid fa-magnifying-glass"/> 
-          </span>
-        {/if}
         <span title="mute/unmute" class="clickable" on:click={() => hideUnhideChannelHandler(channel)}>
           <i class="fa-regular {channel.isHidden ? 'fa-eye' : 'fa-eye-slash'}" /> 
         </span>
         <span title="remove" class="clickable" on:click={() => deleteChannelHandler(channel)}>
           <i class="fa-solid fa-trash"/> 
         </span>
-        <i class="fa-solid fa-circle" style="{channel.status == channelStatus.online ? 'color: green' : 'color:red'}"/>
+        {#if channel.status == channelStatus.online}
+          <span>
+            <i class="fa-solid fa-circle" style="color: green"/>
+          </span>
+        {:else}
+         <span>
+            <i class="fa-solid fa-circle" style="color: red"/>
+          </span>
+        {/if}
         <span>{channel.name}</span>
+        {#if channel.status == channelStatus.online && channel.isHidden}
+          <span title="preview" class="clickable" on:click={() => previewChannel(channel)}>
+            <i class="fa-solid fa-magnifying-glass"/> 
+          </span>
+        {/if}
       </div>
       {#if channel.preview && channel.status == channelStatus.online}
         <div style="padding-right:10px">

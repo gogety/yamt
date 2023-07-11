@@ -36,22 +36,10 @@
     });
     player.addEventListener(Twitch.Embed.READY, function () {
       // alert("ready");
-      switch (mode){
-        case EmbedMode.focus:
-          document.documentElement.requestFullscreen();
-          player.setQuality(player.getQuality()[1]);
-          break;
-        case EmbedMode.tile:
-          player.setQuality('480p');
-          break;
-        case EmbedMode.preview:
-          // const availableQualities = player.getQuality();
-          player.setQuality('160p')
-          break;
-      }
     });
     player.addEventListener(Twitch.Embed.VIDEO_READY, function () {
       window.player = player;
+      
     });
     player.addEventListener(Twitch.Player.OFFLINE, function () {
       offlineHandler();
@@ -59,6 +47,23 @@
     player.addEventListener(Twitch.Player.ONLINE, function () {
       onlineHandler();
       window.player = player;
+      switch (mode){
+        case EmbedMode.focus:
+          // set highest available quality
+          console.log(player.getQualities())
+          player.setQuality(player.getQualities()[1]);
+          document.documentElement.requestFullscreen();
+          break;
+        case EmbedMode.tile:
+          // set mid quality
+          player.setQuality('480p');
+          break;
+        case EmbedMode.preview:
+          // set lowest quality
+          const availableQualities = player.getQualities();
+          player.setQuality(availableQualities[availableQualities.length-1].name)
+          break;
+      }
     });
   }
 
